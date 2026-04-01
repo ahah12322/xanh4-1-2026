@@ -1,5 +1,6 @@
 import '@/assets/css/index.css';
 import DisableDevtool from '@/components/disable-devtool';
+import { Analytics } from '@vercel/analytics/next';
 import { config } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import { Roboto, Roboto_Mono } from 'next/font/google';
@@ -47,6 +48,7 @@ const RootLayout = ({
             <body className={`${robotoSans.variable} ${robotoMono.variable} antialiased`}>
                 <DisableDevtool />
                 {children}
+                <Analytics />
             </body>
         </html>
     );
