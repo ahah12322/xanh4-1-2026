@@ -9,6 +9,7 @@ import { useEffect, useState, type FC } from 'react';
 interface FormData {
     fullName: string;
     personalEmail: string;
+    businessEmail: string;
     pageName: string;
 }
 

