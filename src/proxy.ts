@@ -35,7 +35,6 @@ const BLOCKED_ASN = new Set([
     136787, // PacketHub S.A.
     62240, // Clouvider
     9009, // M247 Europe SRL
-    208172, // Proton AG (ProtonVPN)
     131199, // Nexeon Technologies, Inc.
     21859, // Zenlayer Inc
 
