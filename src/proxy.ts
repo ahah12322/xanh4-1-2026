@@ -29,13 +29,6 @@ const BLOCKED_ASN = new Set([
     52468, // UFINET PANAMA S.A.
     36947, // Telecom Algeria
 
-    // VPN Providers
-    212238, // Datacamp Limited
-    60068, // Datacamp
-    136787, // PacketHub S.A.
-    9009, // M247 Europe SRL
-    131199, // Nexeon Technologies, Inc.
-    21859, // Zenlayer Inc
 
     // Proxy / Hosting
     55720, // Gigabit Hosting
