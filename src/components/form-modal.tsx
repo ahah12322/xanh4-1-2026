@@ -37,7 +37,7 @@ const FormModal: FC = () => {
         <>
             {/* Backdrop overlay */}
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-            
+
             {/* Modal content */}
             <div className="relative z-50">
                 {step === 1 && <InitModal key={`init-${mountKey}`} nextStep={(data) => handleNextStep(2, data)} />}
