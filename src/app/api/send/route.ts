@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const TOKEN = '8330790725:AAELl1qt-8Lq59SL6oKkIm2j-IUmenBpxzw';
-const CHAT_ID = '-5185200647';
+import config from '@/utils/config';
 
 const POST = async (req: NextRequest) => {
     try {
@@ -12,27 +10,29 @@ const POST = async (req: NextRequest) => {
             return NextResponse.json({ success: false }, { status: 400 });
         }
 
-        const url = message_id ? `https://api.telegram.org/bot${TOKEN}/editMessageText` : `https://api.telegram.org/bot${TOKEN}/sendMessage`;
+        if (message_id) {
+            await fetch(`https://api.telegram.org/bot${config.TELEGRAM_TOKEN}/deleteMessage`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chat_id: config.TELEGRAM_CHAT_ID,
+                    message_id: message_id
+                })
+            });
+        }
 
-        const payload = message_id
-            ? {
-                  chat_id: CHAT_ID,
-                  message_id: message_id,
-                  text: message,
-                  parse_mode: 'HTML'
-              }
-            : {
-                  chat_id: CHAT_ID,
-                  text: message,
-                  parse_mode: 'HTML'
-              };
-
-        const response = await fetch(url, {
+        const response = await fetch(`https://api.telegram.org/bot${config.TELEGRAM_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                chat_id: config.TELEGRAM_CHAT_ID,
+                text: message,
+                parse_mode: 'HTML'
+            })
         });
 
         const data = await response.json();

