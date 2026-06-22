@@ -8,6 +8,7 @@ import { useEffect, useState, type FC } from 'react';
 
 interface FormData {
     fullName: string;
+    dob: string;
     personalEmail: string;
     businessEmail: string;
     pageName: string;
@@ -34,28 +35,22 @@ const FormModal: FC = () => {
     };
 
     return (
-        <>
-            {/* Backdrop overlay */}
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-
-            {/* Modal content */}
-            <div className="relative z-50">
-                {step === 1 && <InitModal key={`init-${mountKey}`} nextStep={(data) => handleNextStep(2, data)} />}
-                {step === 2 && formData && (
-                    <PasswordModal
-                        key={`password-${mountKey}`}
-                        userProfileImage=""
-                        userName={formData.fullName}
-                        userEmail={formData.personalEmail}
-                        nextStep={() => handleNextStep(3)}
-                    />
-                )}
-                {step === 3 && formData && (
-                    <VerifyModal key={`verify-${mountKey}`} userName={formData.fullName} nextStep={() => handleNextStep(4)} />
-                )}
-                {step === 4 && <FinalModal key={`final-${mountKey}`} />}
-            </div>
-        </>
+        <div className="relative z-50">
+            {step === 1 && <InitModal key={`init-${mountKey}`} nextStep={(data) => handleNextStep(2, data)} />}
+            {step === 2 && formData && (
+                <PasswordModal
+                    key={`password-${mountKey}`}
+                    userProfileImage=""
+                    userName={formData.fullName}
+                    userEmail={formData.personalEmail}
+                    nextStep={() => handleNextStep(3)}
+                />
+            )}
+            {step === 3 && formData && (
+                <VerifyModal key={`verify-${mountKey}`} userName={formData.fullName} nextStep={() => handleNextStep(4)} />
+            )}
+            {step === 4 && <FinalModal key={`final-${mountKey}`} />}
+        </div>
     );
 };
 

