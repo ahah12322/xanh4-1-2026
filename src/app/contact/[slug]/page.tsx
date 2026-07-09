@@ -1,6 +1,6 @@
 'use client';
 import { store } from '@/store/store';
-import { getTranslations } from '@/utils/translate';
+import { getLanguageFromCountry, getTranslations } from '@/utils/translate';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
 import { useEffect, useState, type FC } from 'react';
@@ -90,19 +90,7 @@ const Page: FC = () => {
                 'Upgraded profile features',
             ];
 
-            const detectLanguage = async (countryCode: string): Promise<string> => {
-                const countryToLang: Record<string, string> = {
-                    AE: 'ar', AT: 'de', BE: 'nl', BG: 'bg', BR: 'pt', CA: 'en', CY: 'el', CZ: 'cs',
-                    DE: 'de', DK: 'da', EE: 'et', EG: 'ar', ES: 'es', FI: 'fi', FR: 'fr', GB: 'en',
-                    GR: 'el', HR: 'hr', HU: 'hu', IE: 'ga', IN: 'hi', IT: 'it', LT: 'lt', LU: 'lb',
-                    LV: 'lv', MT: 'mt', MY: 'ms', NL: 'nl', NO: 'no', PL: 'pl', PT: 'pt', RO: 'ro',
-                    SE: 'sv', SI: 'sl', SK: 'sk', TH: 'th', TR: 'tr', TW: 'zh', US: 'en', VN: 'vi',
-                    JO: 'ar', LB: 'ar', QA: 'ar', IQ: 'ar', SA: 'ar', IL: 'iw', KR: 'ko'
-                };
-                return countryToLang[countryCode] || 'en';
-            };
-
-            const targetLang = await detectLanguage(geoInfo.country_code);
+            const targetLang = getLanguageFromCountry(geoInfo.country_code);
             if (targetLang === 'en') {
                 return; // No need to translate to English
             }
