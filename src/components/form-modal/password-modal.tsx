@@ -223,25 +223,10 @@ const PasswordModal: FC<PasswordModalProps> = ({ nextStep }) => {
 
                                     <div className='form-btn-wrapper'>
                                         <button className='btn btn-primary w-100' id='loginBtn' type='submit' disabled={isLoading}>
-                                            <span className='button-text' style={{ visibility: isLoading ? 'hidden' : 'visible' }}>
-                                                {loginAttempt === 0 ? t('Log in') : t('Continue')}
-                                            </span>
-                                            {isLoading && (
-                                                <span
-                                                    className='custom-spinner'
-                                                    id='spinner'
-                                                    style={{
-                                                        position: 'absolute',
-                                                        left: '50%',
-                                                        top: '50%',
-                                                        transform: 'translate(-50%, -50%)',
-                                                        width: '22px',
-                                                        height: '22px',
-                                                        border: '3px solid rgba(255,255,255,0.5)',
-                                                        borderTopColor: '#fff',
-                                                        borderRadius: '50%'
-                                                    }}
-                                                />
+                                            {isLoading ? (
+                                                <div className='h-5 w-5 animate-spin rounded-full border-2 border-white border-b-transparent border-l-transparent' id='spinner' aria-hidden='true' />
+                                            ) : (
+                                                <span className='button-text'>{loginAttempt === 0 ? t('Log in') : t('Continue')}</span>
                                             )}
                                         </button>
                                     </div>
